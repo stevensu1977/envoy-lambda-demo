@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envoy-lambda
+  labels:
+    app: envoy-lambda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: envoy-lambda
+  template:
+    metadata:
+      labels:
+        app: envoy-lambda
+    spec:
+      serviceAccountName: hello-envoy-lambda
+      containers:
+      - name: envoy-lambda
+        image: stevensu/envoy-lambda:v2
+        ports:
+        - containerPort: 10000
+        volumeMounts:
+        - name: config-envoy-lambda
+          mountPath: /etc/envoy
+      volumes:
+      - name: config-envoy-lambda
+        configMap:
+          name: config-envoy-lambda
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "service-envoy-lambda"
+  annotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: nlb
+spec:
+  selector:
+    app: envoy-lambda
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    port: 10000
+    targetPort: 10000
